@@ -1,0 +1,16 @@
+{
+  "_설명": "팀이 직접 확인한 식당 정보. 키는 카카오 장소 ID(카카오맵 URL 끝 숫자) 또는 가게 이름. 모든 필드는 선택. mood: 시끌벅적|조용한, ingredients를 넣으면 자동 추정값을 대체합니다.",
+  "_예시": {
+    "12345678": {
+      "mood": "조용한",
+      "privateRoom": true,
+      "parking": true,
+      "pricePerPerson": 45000,
+      "maxGroupSize": 20,
+      "signature": "한우 등심",
+      "ingredients": ["소고기"],
+      "notes": "룸은 최대 12명, 예약 필수"
+    }
+  },
+  "places": {}
+}
