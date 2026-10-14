@@ -53,8 +53,8 @@ npm run build                # 프로덕션 빌드
 
 | 키 | 필수 여부 | 발급처 |
 | --- | --- | --- |
-| `KAKAO_REST_API_KEY` | **필수** (없으면 예시 데이터) | [Kakao Developers](https://developers.kakao.com) → 앱 생성 → REST API 키, 카카오맵 사용 설정 ON |
-| `NEXT_PUBLIC_KAKAO_JS_KEY` | 선택 (지도 표시) | 같은 앱의 JavaScript 키 + 플랫폼 → Web 도메인 등록 |
+| `KAKAO_REST_API_KEY` | **필수** (없으면 예시 데이터) | [Kakao Developers](https://developers.kakao.com) → 앱 생성 → [앱] > [플랫폼 키] → REST API 키. 카카오맵 사용 설정 ON, 허용 IP는 비워두기 |
+| `NEXT_PUBLIC_KAKAO_JS_KEY` | 선택 (지도 표시) | 같은 화면의 JavaScript 키. 키 항목의 "JavaScript SDK 도메인"에 사이트 주소 등록 |
 | `NAVER_CLIENT_ID` / `NAVER_CLIENT_SECRET` | 선택 | [NAVER Developers](https://developers.naver.com) → 애플리케이션 등록 → 검색 API |
 | `GOOGLE_PLACES_API_KEY` | 선택 | [Google Cloud Console](https://console.cloud.google.com) → Places API (New) 사용 설정 → API 키. 결제 계정 필요(유료 구간 있음) |
 
@@ -63,7 +63,7 @@ npm run build                # 프로덕션 빌드
 1. [vercel.com](https://vercel.com)에서 이 GitHub 저장소를 Import
 2. Settings → Environment Variables에 위 키들을 입력
 3. Deploy → 발급된 `https://<프로젝트>.vercel.app` 주소를 팀에 공유
-4. 카카오 JavaScript 키를 쓰면 Kakao Developers의 Web 플랫폼에 그 도메인을 등록
+4. 카카오 JavaScript 키를 쓰면 Kakao Developers의 [앱] > [플랫폼 키] > JavaScript 키 > "JavaScript SDK 도메인"에 그 주소를 등록
 
 ## 구조
 
