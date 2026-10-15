@@ -108,9 +108,9 @@ export default function App() {
     }
   };
 
-  const select = useCallback((id: string) => {
+  const select = useCallback((id: string, scroll = true) => {
     setSelectedId(id);
-    document.getElementById(`card-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    if (scroll) document.getElementById(`card-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }, []);
 
   return (

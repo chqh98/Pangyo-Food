@@ -85,6 +85,9 @@ export interface PlaceDetails {
     businessStatus: string | null;
     url: string;
     reviews: GoogleReview[];
+    photoUrl: string | null;
+    /** 구글 사진 저작자 (표시 의무) */
+    photoAuthor: string | null;
     /** 키는 있는데 조회에 실패한 경우 원인 */
     error?: string;
   };

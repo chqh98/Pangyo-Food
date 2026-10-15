@@ -1,7 +1,9 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { fetchPlaceDetails } from '@/lib/detailsClient';
 import type { Recommendation, RestaurantsResponse } from '@/lib/types';
+import { buildPopup } from './mapPopup';
 
 declare global {
   interface Window { kakao: any }
@@ -34,7 +36,7 @@ interface Props {
   radius: number;
   recs: Recommendation[];
   selectedId: string | null;
-  onSelect: (id: string) => void;
+  onSelect: (id: string, scroll?: boolean) => void;
 }
 
 export default function MapView(props: Props) {
@@ -48,7 +50,8 @@ function KakaoMap({ origin, radius, recs, selectedId, onSelect, onFail }: Props 
   const ref = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
   const markersRef = useRef<Map<string, any>>(new Map());
-  const infoRef = useRef<any>(null);
+  const popupRef = useRef<any>(null);
+  const [popupId, setPopupId] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -65,7 +68,7 @@ function KakaoMap({ origin, radius, recs, selectedId, onSelect, onFail }: Props 
         map, position: center, yAnchor: 1.4,
         content: `<div class="map-origin">🏢 ${origin.name}</div>`,
       });
-      infoRef.current = new kakao.maps.InfoWindow({ removable: false });
+      popupRef.current = new kakao.maps.CustomOverlay({ yAnchor: 1, zIndex: 10, clickable: true });
       mapRef.current = map;
       setReady(true);
     }).catch(onFail);
@@ -81,19 +84,44 @@ function KakaoMap({ origin, radius, recs, selectedId, onSelect, onFail }: Props 
     for (const rec of recs) {
       const r = rec.restaurant;
       const marker = new kakao.maps.Marker({ map, position: new kakao.maps.LatLng(r.lat, r.lng), title: r.name });
-      kakao.maps.event.addListener(marker, 'click', () => onSelect(r.id));
+      kakao.maps.event.addListener(marker, 'click', () => {
+        setPopupId(r.id);
+        onSelect(r.id, false);
+      });
       markersRef.current.set(r.id, marker);
     }
   }, [ready, recs, onSelect]);
 
+  // 목록에서 고른 식당도 지도에 정보 창을 띄운다
   useEffect(() => {
-    const marker = selectedId && markersRef.current.get(selectedId);
-    const rec = recs.find((x) => x.restaurant.id === selectedId);
-    if (!marker || !rec || !infoRef.current) return;
-    infoRef.current.setContent(`<div class="map-info">${rec.restaurant.name}</div>`);
-    infoRef.current.open(mapRef.current, marker);
+    if (selectedId) setPopupId(selectedId);
+  }, [selectedId]);
+
+  useEffect(() => {
+    const overlay = popupRef.current;
+    const marker = popupId && markersRef.current.get(popupId);
+    const rec = recs.find((x) => x.restaurant.id === popupId);
+    if (!ready || !overlay) return;
+    if (!marker || !rec) {
+      overlay.setMap(null);
+      return;
+    }
+    let cancelled = false;
+    const r = rec.restaurant;
+    const handlers = {
+      onClose: () => setPopupId(null),
+      onShowInList: () => onSelect(r.id, true),
+    };
+    const render = (d: Parameters<typeof buildPopup>[1]) => {
+      if (!cancelled) overlay.setContent(buildPopup(r, d, handlers));
+    };
+    render('loading');
+    overlay.setPosition(marker.getPosition());
+    overlay.setMap(mapRef.current);
     mapRef.current.panTo(marker.getPosition());
-  }, [ready, selectedId, recs]);
+    fetchPlaceDetails(r.id).then(render, () => render('error'));
+    return () => { cancelled = true; };
+  }, [ready, popupId, recs, onSelect]);
 
   return <div ref={ref} className="map" />;
 }

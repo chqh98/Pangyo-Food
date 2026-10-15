@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { fetchPlaceDetails } from '@/lib/detailsClient';
 import type { PlaceDetails } from '@/lib/types';
 
 const STATUS_CLASS: Record<PlaceDetails['status'], string> = {
@@ -18,12 +19,8 @@ export default function ReviewPanel({ id }: { id: string }) {
   const [showAll, setShowAll] = useState(false);
 
   useEffect(() => {
-    fetch(`/api/places/${encodeURIComponent(id)}`)
-      .then(async (res) => {
-        const body = await res.json();
-        if (!res.ok) throw new Error(body.error ?? '조회 실패');
-        setD(body);
-      })
+    fetchPlaceDetails(id)
+      .then(setD)
       .catch((e) => setError(String(e.message ?? e)));
   }, [id]);
 

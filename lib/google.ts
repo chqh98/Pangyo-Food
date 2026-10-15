@@ -12,6 +12,7 @@ interface GooglePlace {
   businessStatus?: string;
   googleMapsUri?: string;
   location?: { latitude: number; longitude: number };
+  photos?: { name: string; authorAttributions?: { displayName?: string; uri?: string }[] }[];
   reviews?: {
     rating: number;
     text?: { text: string };
@@ -23,8 +24,23 @@ interface GooglePlace {
 
 const FIELD_MASK = [
   'places.id', 'places.displayName', 'places.rating', 'places.userRatingCount',
-  'places.businessStatus', 'places.googleMapsUri', 'places.location', 'places.reviews',
+  'places.businessStatus', 'places.googleMapsUri', 'places.location', 'places.reviews', 'places.photos',
 ].join(',');
+
+/** 사진 리소스 이름 → 키 없이 열 수 있는 이미지 URL (실패하면 null) */
+async function fetchPhotoUrl(photoName: string): Promise<string | null> {
+  try {
+    const qs = new URLSearchParams({ maxWidthPx: '400', skipHttpRedirect: 'true', key: process.env.GOOGLE_PLACES_API_KEY! });
+    const res = await fetch(`https://places.googleapis.com/v1/${photoName}/media?${qs}`, {
+      next: { revalidate: DETAIL_REVALIDATE_SECONDS },
+    });
+    if (!res.ok) return null;
+    const data: { photoUri?: string } = await res.json();
+    return data.photoUri ?? null;
+  } catch {
+    return null;
+  }
+}
 
 export const googleConfigured = () => Boolean(process.env.GOOGLE_PLACES_API_KEY);
 
@@ -39,6 +55,8 @@ export const uncheckedGoogle = (name: string, lat: number, lng: number) => ({
   businessStatus: null as string | null,
   url: googleSearchUrl(name, lat, lng),
   reviews: [] as GoogleReview[],
+  photoUrl: null as string | null,
+  photoAuthor: null as string | null,
 });
 
 export async function lookupGoogle(name: string, lat: number, lng: number) {
@@ -72,8 +90,13 @@ export async function lookupGoogle(name: string, lat: number, lng: number) {
   });
   if (!place) return result;
 
+  const photo = place.photos?.[0];
+  const photoUrl = photo ? await fetchPhotoUrl(photo.name) : null;
+
   return {
     ...result,
+    photoUrl,
+    photoAuthor: photoUrl ? photo?.authorAttributions?.[0]?.displayName ?? null : null,
     found: true,
     rating: place.rating ?? null,
     reviewCount: place.userRatingCount ?? null,
