@@ -13,10 +13,18 @@ function loadKakaoSdk(): Promise<any> {
   if (typeof window === 'undefined') return Promise.reject();
   if (window.kakao?.maps?.LatLng) return Promise.resolve(window.kakao);
   return new Promise((resolve, reject) => {
+    // 등록되지 않은 도메인이면 스크립트가 실패하거나 지도가 끝내 준비되지 않는다
+    const timer = setTimeout(() => reject(new Error('timeout')), 8000);
     const s = document.createElement('script');
     s.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_JS_KEY}&autoload=false`;
-    s.onload = () => window.kakao.maps.load(() => resolve(window.kakao));
-    s.onerror = reject;
+    s.onload = () => {
+      if (!window.kakao?.maps) return reject(new Error('sdk'));
+      window.kakao.maps.load(() => {
+        clearTimeout(timer);
+        resolve(window.kakao);
+      });
+    };
+    s.onerror = () => reject(new Error('script'));
     document.head.appendChild(s);
   });
 }
@@ -32,7 +40,8 @@ interface Props {
 export default function MapView(props: Props) {
   const [kakaoFailed, setKakaoFailed] = useState(false);
   const onFail = useCallback(() => setKakaoFailed(true), []);
-  return KAKAO_JS_KEY && !kakaoFailed ? <KakaoMap {...props} onFail={onFail} /> : <SchematicMap {...props} />;
+  if (KAKAO_JS_KEY && !kakaoFailed) return <KakaoMap {...props} onFail={onFail} />;
+  return <SchematicMap {...props} reason={KAKAO_JS_KEY ? 'load-failed' : 'no-key'} />;
 }
 
 function KakaoMap({ origin, radius, recs, selectedId, onSelect, onFail }: Props & { onFail: () => void }) {
@@ -90,7 +99,7 @@ function KakaoMap({ origin, radius, recs, selectedId, onSelect, onFail }: Props 
 }
 
 /** 지도 키가 없을 때: 기준 건물 중심의 개략도 */
-function SchematicMap({ origin, radius, recs, selectedId, onSelect }: Props) {
+function SchematicMap({ origin, radius, recs, selectedId, onSelect, reason }: Props & { reason: 'no-key' | 'load-failed' }) {
   const size = radius * 1.15;
   const cos = Math.cos((origin.lat * Math.PI) / 180);
   const toXY = (lat: number, lng: number) => ({
@@ -118,7 +127,13 @@ function SchematicMap({ origin, radius, recs, selectedId, onSelect }: Props) {
         <rect x={-26} y={-26} width={52} height={52} rx={8} className="origin" />
         <text x={0} y={95} textAnchor="middle" className="label strong">{origin.name}</text>
       </svg>
-      <p className="tiny muted map-note">개략도입니다. <code>NEXT_PUBLIC_KAKAO_JS_KEY</code>를 설정하면 카카오 지도가 표시돼요.</p>
+      <p className="tiny muted map-note">
+        {reason === 'no-key' ? (
+          <>개략도입니다. 사이트에 카카오 JavaScript 키가 없어요. Vercel에 <code>NEXT_PUBLIC_KAKAO_JS_KEY</code>를 <strong>Config</strong> 타입으로 넣고 다시 배포하세요.</>
+        ) : (
+          <>카카오 지도를 불러오지 못해 개략도를 보여줘요. Kakao Developers → [플랫폼 키] → JavaScript 키 → <strong>JavaScript SDK 도메인</strong>에 <code>{typeof window === 'undefined' ? '' : location.origin}</code>을 등록하세요.</>
+        )}
+      </p>
     </div>
   );
 }
