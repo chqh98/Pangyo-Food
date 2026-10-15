@@ -42,7 +42,9 @@ export default function ReviewPanel({ id }: { id: string }) {
       <div className="review-grid">
         <section className="source google">
           <h4>구글</h4>
-          {!d.google.configured ? (
+          {d.google.error ? (
+            <p className="small danger-text">⚠️ {d.google.error}</p>
+          ) : !d.google.configured ? (
             <p className="muted small">구글 API 키가 없어 평점을 불러오지 못했어요.</p>
           ) : !d.google.found ? (
             <p className="muted small">구글 지도에서 찾지 못했어요.</p>
@@ -74,7 +76,8 @@ export default function ReviewPanel({ id }: { id: string }) {
         <section className="source naver">
           <h4>네이버</h4>
           <p className="small">
-            {!d.naver.configured ? <span className="muted">네이버 API 키 미설정</span>
+            {d.naver.error ? <span className="danger-text">⚠️ {d.naver.error}</span>
+              : !d.naver.configured ? <span className="muted">네이버 API 키 미설정</span>
               : d.naver.found ? <>✅ 네이버 지도에 등록됨{d.naver.category && <span className="muted"> · {d.naver.category}</span>}</>
               : <span className="danger-text">네이버에서 찾지 못함</span>}
           </p>

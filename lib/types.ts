@@ -85,12 +85,15 @@ export interface PlaceDetails {
     businessStatus: string | null;
     url: string;
     reviews: GoogleReview[];
+    /** 키는 있는데 조회에 실패한 경우 원인 */
+    error?: string;
   };
   naver: {
     found: boolean;
     configured: boolean;
     category: string | null;
     url: string;
+    error?: string;
   };
   kakao: {
     found: boolean;
