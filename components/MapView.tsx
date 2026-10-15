@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { fetchPlaceDetails } from '@/lib/detailsClient';
+import { cachedPlaceDetails, fetchPlaceDetails } from '@/lib/detailsClient';
 import type { Recommendation, RestaurantsResponse } from '@/lib/types';
 import { buildPopup } from './mapPopup';
 
@@ -108,18 +108,25 @@ function KakaoMap({ origin, radius, recs, selectedId, onSelect, onFail }: Props 
     }
     let cancelled = false;
     const r = rec.restaurant;
-    const handlers = {
-      onClose: () => setPopupId(null),
-      onShowInList: () => onSelect(r.id, true),
-    };
     const render = (d: Parameters<typeof buildPopup>[1]) => {
       if (!cancelled) overlay.setContent(buildPopup(r, d, handlers));
     };
-    render('loading');
+    const load = (p: Promise<unknown>) => {
+      render('loading');
+      p.then((d) => render(d as Parameters<typeof buildPopup>[1]), () => render('error'));
+    };
+    const handlers = {
+      onClose: () => setPopupId(null),
+      onShowInList: () => onSelect(r.id, true),
+      onLoadDetails: () => load(fetchPlaceDetails(r.id)),
+    };
+    // 이미 조회한 식당이면 그 결과를 보여주고, 아니면 버튼을 눌러야 구글을 조회한다
+    const cached = cachedPlaceDetails(r.id);
+    if (cached) load(cached);
+    else render(null);
     overlay.setPosition(marker.getPosition());
     overlay.setMap(mapRef.current);
     mapRef.current.panTo(marker.getPosition());
-    fetchPlaceDetails(r.id).then(render, () => render('error'));
     return () => { cancelled = true; };
   }, [ready, popupId, recs, onSelect]);
 

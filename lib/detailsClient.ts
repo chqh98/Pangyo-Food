@@ -3,6 +3,9 @@ import type { PlaceDetails } from './types';
 const cache = new Map<string, Promise<PlaceDetails>>();
 
 /** 같은 식당의 리뷰·영업상태 조회를 한 번만 하도록 공유한다 (실패하면 다음에 다시 시도) */
+/** 이미 조회한 적 있으면 그 결과(진행 중 포함), 없으면 null — 구글 호출을 새로 만들지 않는다 */
+export const cachedPlaceDetails = (id: string): Promise<PlaceDetails> | null => cache.get(id) ?? null;
+
 export function fetchPlaceDetails(id: string): Promise<PlaceDetails> {
   let p = cache.get(id);
   if (!p) {

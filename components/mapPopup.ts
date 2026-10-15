@@ -16,7 +16,9 @@ export const kakaoRouteUrl = (r: Restaurant) =>
 
 function ratingHtml(d: PlaceDetails | null | 'loading' | 'error'): string {
   if (d === 'loading') return '<span class="pop-muted">평점 불러오는 중…</span>';
-  if (d === 'error' || d === null) return '';
+  // 구글 무료 한도를 아끼려고 누를 때만 조회한다
+  if (d === null) return '<button type="button" class="pop-load">⭐ 평점·사진 보기</button>';
+  if (d === 'error') return '';
   const status = `<span class="pop-status ${STATUS_CLASS[d.status]}">${esc(d.status)}</span>`;
   if (d.google.rating === null) return status;
   return `<span class="pop-score">${d.google.rating.toFixed(1)}</span>`
@@ -28,7 +30,7 @@ function ratingHtml(d: PlaceDetails | null | 'loading' | 'error'): string {
 export function buildPopup(
   r: Restaurant,
   details: PlaceDetails | null | 'loading' | 'error',
-  handlers: { onClose: () => void; onShowInList: () => void },
+  handlers: { onClose: () => void; onShowInList: () => void; onLoadDetails: () => void },
 ): HTMLElement {
   const el = document.createElement('div');
   el.className = 'pop';
@@ -67,6 +69,7 @@ export function buildPopup(
 
   el.querySelector('.pop-x')!.addEventListener('click', handlers.onClose);
   el.querySelector('.pop-list')!.addEventListener('click', handlers.onShowInList);
+  el.querySelector('.pop-load')?.addEventListener('click', handlers.onLoadDetails);
   // 지도 드래그·클릭이 말풍선 아래로 새지 않게
   ['mousedown', 'touchstart', 'click', 'wheel'].forEach((ev) => el.addEventListener(ev, (e) => e.stopPropagation()));
   return el;
